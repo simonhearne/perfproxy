@@ -209,10 +209,10 @@
                     let bu = "";
                     let bh = "";
                     if (formData.get('bu')) {
-                        bu = "\\nblock " + formData.get('bu');
+                        bu = "\nblock " + formData.get('bu');
                     }
                     if (formData.get('bh')) {
-                        bh = "\\nblockDomains " + formData.get('bh');
+                        bh = "\nblockDomains " + formData.get('bh');
                     }
                     newHost = url.host.replaceAll('.', '_') + '.perfproxy.com';
                     wptScriptEl.value = "overrideHost " + url.host + " " + newHost + bu + bh + "\nnavigate " + url.href;
@@ -234,7 +234,7 @@
                 }
                 ELEMENTS.forEach(el => {
                     if (formData.get(el).length > 0) {
-                        let fds = formData.get(el).split('\\n');
+                        let fds = formData.get(el).split('\n');
                         fds.forEach(fd => {
                             url.searchParams.append(`_${el}`, encodeURIComponent(fd))
                         })
