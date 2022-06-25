@@ -69,6 +69,8 @@ const ELEMENTS = [
 
 async function handleRequest(request) {
     const url = new URL(request.url);
+
+    /* show the main page */
     if (url.host == "perfproxy.com") {
       return new Response(indexHtml,{headers:{'Content-Type': 'text/html'}});
     }
@@ -95,11 +97,14 @@ async function handleRequest(request) {
         console.log("HTML");
         let transformations = getTransformations(url);
         let newUrl = new URL(url);
+
+        /* tidy up the URL to origin */
         newUrl.searchParams.delete('_pp');
         ELEMENTS.forEach(el => {
             newUrl.searchParams.delete(el);
         });
         let newRequest = new Request(newUrl.href,request);
+
         /* override host to prevent redirects */
         newRequest.headers.set('host',host);
 
@@ -118,6 +123,7 @@ async function handleRequest(request) {
         }
         let response = new Response(res.body, res);
 
+        /* set some debug headers */
         response.headers.set("x-proxied","true");
         if (isRedirect) {
             response.headers.set("x-proxy-redirect-loop",isRedirect);
@@ -126,7 +132,6 @@ async function handleRequest(request) {
             response.headers.set("x-proxy-redirects",redirects);
         }
 
-
         /* set headers */
         if (transformations.hasOwnProperty('_h')) {
             transformations._h.forEach(h => {
@@ -134,6 +139,8 @@ async function handleRequest(request) {
                 response.headers.set(key.trim(),val.trim());
             });
         }
+
+        /* for image optimsation we need to set client hint response headers and set a cookie for state */
         if (transformations.hasOwnProperty('oi')) {
             response.headers.set("accept-ch","DPR,Width");
             response.headers.append("set-cookie","_oi=true");
@@ -143,10 +150,13 @@ async function handleRequest(request) {
         response.headers.delete('content-security-policy');
         response.headers.delete('content-security-policy-report-only');
 
+        /* disable search engine indexing */
+        response.headers.append('X-Robots-Tag','noindex');
+
         let rewritten = rewrite(response,transformations,newUrl);
-        //console.log({rewritten});
         return rewritten;
     } else if (
+        /* image requests */
         accept && accept.includes('image/*') && !(/\.svg/.test(url.toString())) &&
         (url.searchParams.has("_oi") || (request.headers.has('cookie') && request.headers.get('cookie').includes('_oi=true')))) {
         let options = {
@@ -176,11 +186,15 @@ async function handleRequest(request) {
         let imgResponse = await fetch(imageRequest, options);
         let newImgResponse = new Response(imgResponse.body,imgResponse);
         newImgResponse.headers.append('x-proxied','true');
+        newImgResponse.headers.append('X-Robots-Tag','noindex');
         return newImgResponse;
     } else {
-        console.log("PASS-THRU");
         /* transparent pass-through for non-matched requests */
-        return fetch(url.toString(), request);
+        console.log("PASS-THRU");
+        let response = await fetch(url.toString(), request);
+        let newResponse = new Response(response.body,response);
+        newResponse.headers.append('X-Robots-Tag','noindex');
+        return newResponse;
     }
 }
 
