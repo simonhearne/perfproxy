@@ -1,269 +1,246 @@
 <!DOCTYPE html>
-<html><head>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Performance Proxy</title>
-<link rel="shortcut icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHhtbDpzcGFjZT0ncHJlc2VydmUnIHZpZXdCb3g9JzAgMCAzMzcuMTkgMzM3LjE5Jz48cGF0aCBmaWxsPScjZmZjZDAwJyBkPSdNMTY4LjU5IDB2MjA0LjUyaDEwNy43N3onLz48cGF0aCBmaWxsPScjZmZkYTQ0JyBkPSdtNjAuODMgMTMyLjY3IDEwNy43NiAyMDQuNTJWMTMyLjY3eicvPjwvc3ZnPg==">
-<style>
-* {
-    box-sizing: border-box;
-    font-size: 16px;
-}
-h1 {
-    font-size: 24px;
-}
-  body {
-    font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;
-    width: 100%;
-    margin: 0;
-    }
-.wrapper {
-    width: 90%;
-    margin: 5% auto;
-    max-width: 960px;
-  }
-  input[type='url'],input[type='text'],textarea {
-    width: 100%;
-  }
-  #toggles label {
-      display:block;
-  }
-  input:invalid {
-    border-color: red;
-    }
-    p.center {
-        text-align: center;
-    }
-    input, textarea {
-        margin-bottom: 4px;
-    }
-    #url {
-        zoom: 1.2;
-        margin: 6px 0;
-    }
-    #targetURL {
-        zoom: 1.2;
-        box-shadow: 0 0 5px 1px green;
-        margin: 6px 0;
-    }
-    fieldset {
-        margin-bottom: 8px;
-    }
-</style>
-<div class="wrapper">
-  <h1>Performance Proxy</h1>
-  <p>Enter a URL and select performance optimisations, a resulting URL will be generated for testing.</p>
-  <p style="font-style:italic;">Cross-origin images will not be optimised. Failure is probable with all optimisations. Test with Chrome for most reliable results.</p>
-  <p>Made for personal experimental use only by <a href="https://twitter.com/SimonHearne">Simon Hearne</a>. <a href="https://github.com/simonhearne/perfproxy">Contribute on GitHub</a>.</p>
-<form id="form">
-  <fieldset>
-    <legend>URL</legend>
-    <label for="url">Target URL:</label><br>
-    <input type="url" name="url" id="url" placeholder="https://page.com/path/?query" required>
-  </fieldset>
-  <fieldset name="toggles">
-    <legend>Feature Toggles</legend>
-    <div id="toggles"></div>
-  </fieldset>
-  <fieldset>
-    <legend>Advanced Features</legend>
-    <label for="fpl">Add <code>fetchpriority="low"</code> and <code>loading="lazy"</code> by querySelector (each on a new line)</label>
-    <textarea placeholder=".mega-nav img" name="fpl" id="fpl"></textarea>
-    <label for="fph">Add <code>fetchpriority="high"</code> and <code>loading="eager"</code> by querySelector (each on a new line)</label>
-    <textarea placeholder=".hero-carousel .hero-el:first-child img.hero" name="fph" id="fph"></textarea>
-  </fieldset>
-  <fieldset>
-    <legend>Injections (each on a new line)</legend>
-    <label for="th">Top of <code>&lt;html&gt;</code></label><br>
-    <textarea placeholder="&lt;meta name='viewport' content='width=device-width,initial-scale=1,shrink-to-fit=no'&gt;" rows="3" name="th" id="th"></textarea>
-    <label for="ht">Top of <code>&lt;head&gt;</code></label><br>
-    <textarea rows="3" name="ht" id="ht" placeholder="&lt;style&gt;*{outline:1px solid red;}&lt;/style&gt;"></textarea>
-    <label for="hb">Bottom of <code>&lt;head&gt;</code></label><br>
-    <textarea placeholder="&lt;link rel='preload' href='/hero-image.jpg' as='image'&gt;" rows="3" name="hb" id="hb"></textarea>
-    <label for="bt">Top of <code>&lt;body&gt;</code></label><br>
-    <textarea rows="3" name="bt" id="bt" placeholder="&lt;link rel='stylesheet' href='https://slowfil.es/file?type=css&delay=2500'&gt;"></textarea>
-    <label for="bb">Bottom of <code>&lt;body&gt;</code></label><br>
-    <textarea rows="3" name="bb" id="bb" placeholder="&lt;script src='https://slowfil.es/file?type=js&delay=2500'&gt;"></textarea>
-    <label for="h">Response Headers</label>
-    <textarea rows="3" name="h" id="h" placeholder="x-foo: bar"></textarea>
-  </fieldset>
-  <fieldset><legend>Request Blocking</legend>
-    <label for="bu">Block URLs containing (space separated)</label><br>
-    <input type="text" name="bu" placeolder="ads.js thirdparty.com">
-    <label for="bh">Block Hosts containing (space separated)</label><br>
-    <input type="text" name="bh" placeolder="google thirdparty.com">
-  </fieldset>
-  <fieldset><legend>Direct Testing</legend>
-  <label for="targetURL">Test URL:</label><br>
-  <input type="url" readonly="true" id="targetURL" name="targetURL" value="Form not complete..." onclick="this.focus();this.select()">
-  <p><a href="" id="link" target="_blank">Visit page in a new tab</a> (note that you may see cross-origin errors accessing directly)</p>
-  </fieldset>
-  <fieldset><legend>WebPageTest Script</legend>
-    <textarea readonly rows="4" id="wpt-script" onclick="this.focus();this.select()"></textarea>
-    <p>Read more about <a href="https://nooshu.com/blog/2020/12/31/how-to-run-a-webpagetest-test/#script-tab">WebPageTest scripts here</a>.</p>
-  </fieldset>
-</form>
-</div>
-<script>
-    const TRANSFORMS = [
-    {
-        'short': 'rpf',
-        'long': 'Remove Preload Fonts',
-        'id': 0
-    },
-    {
-        'short': 'rps',
-        'long': 'Remove Preload Scripts',
-        'id': 1
-    },
-    {
-        'short': 'rpi',
-        'long': 'Remove Preload Images',
-        'id': 2
-    },
-    {
-        'short': 'rpc',
-        'long': 'Remove Preload Styles',
-        'id': 3
-    },
-    {
-        'short': 'ds',
-        'long': 'Defer Scripts',
-        'id': 4
-    },
-    {
-        'short': 'ai',
-        'long': 'Add <code>decoding="async"</code> to <code>&lt;img&gt;</code> elements',
-        'id': 5
-    },
-    {
-        'short': 'li',
-        'long': 'Add <code>loading="lazy"</code> to <code>&lt;img&gt;</code> elements',
-        'id': 6
-    },
-    {
-        'short': 'si',
-        'long': 'Swap <code>&lt;img data-src&gt;</code> for <code>&lt;img src&gt;</code>',
-        'id': 7
-    },
-    {
-        'short': 'dc',
-        'long': 'Defer external CSS',
-        'id': 8
-    },
-    {
-        'short': 'ric',
-        'long': 'Remove inline CSS',
-        'id': 9
-    },
-    {
-        'short': 'sc',
-        'long': 'Un-async external CSS',
-        'id': 10
-    },
-    {
-        'short': 'oi',
-        'long': 'Optimise Images (experimental)',
-        'id': 11
-    }
-]
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>Performance Proxy</title>
+        <link rel="shortcut icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHhtbDpzcGFjZT0ncHJlc2VydmUnIHZpZXdCb3g9JzAgMCAzMzcuMTkgMzM3LjE5Jz48cGF0aCBmaWxsPScjZmZjZDAwJyBkPSdNMTY4LjU5IDB2MjA0LjUyaDEwNy43N3onLz48cGF0aCBmaWxsPScjZmZkYTQ0JyBkPSdtNjAuODMgMTMyLjY3IDEwNy43NiAyMDQuNTJWMTMyLjY3eicvPjwvc3ZnPg==">
+        <style>
+            * {
+                box-sizing: border-box;
+                font-size: 16px;
+            }
+            h1 {
+                font-size: 24px;
+            }
+            body {
+                font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;
+                width: 100%;
+                margin: 0;
+            }
+            .wrapper {
+                width: 90%;
+                margin: 5% auto;
+                max-width: 960px;
+            }
+            input[type='url'],
+            input[type='text'],
+            textarea {
+                width: 100%;
+            }
+            #toggles label {
+                display: block;
+            }
+            input:invalid {
+                border-color: red;
+            }
+            p.center {
+                text-align: center;
+            }
+            input,
+            textarea {
+                margin-bottom: 4px;
+            }
+            #url {
+                zoom: 1.2;
+                margin: 6px 0;
+            }
+            #targetURL {
+                zoom: 1.2;
+                margin: 6px 0;
+            }
+            fieldset {
+                margin-bottom: 8px;
+                border-radius: 4px;
+            }
+            fieldset.highlight {
+                border: 4px solid green;
+            }
+            .sticky-wrapper {
+                position:fixed;
+                bottom: 0;
+                background: white;
+                width:100%;
+                padding-top: 20px;
+                box-shadow: 0 0 10px;
+            }
+            .sticky {
+                width: 90%;
+                max-width: 960px;
+                margin: 0 auto 30px auto;
+            }
+        </style>
+        <div class="wrapper">
+            <h1>Performance Proxy</h1>
+            <p>Enter a URL and select performance optimisations, a resulting URL will be generated for testing.</p>
+            <p style="font-style:italic;">Cross-origin images will not be optimised. Failure is probable with all optimisations. Test with Chrome for most reliable results.</p>
+            <p>Made for personal experimental use only by <a href="https://twitter.com/SimonHearne">Simon Hearne</a>. <a href="https://github.com/simonhearne/perfproxy">Contribute on GitHub</a>.</p>
+            <form id="form">
+                <fieldset>
+                    <legend>URL</legend>
+                    <label for="url">Target URL:</label><br>
+                    <input type="url" name="url" id="url" placeholder="https://page.com/path/?query" required>
+                </fieldset>
+                <fieldset name="toggles">
+                    <legend>Feature Toggles</legend>
+                    <div id="toggles"></div>
+                </fieldset>
+                <fieldset>
+                    <legend>Advanced Features</legend>
+                    <label for="fpl">Add <code>fetchpriority="low"</code> and <code>loading="lazy"</code> by querySelector (each on a new line)</label>
+                    <textarea placeholder=".mega-nav img" name="fpl" id="fpl"></textarea>
+                    <label for="fph">Add <code>fetchpriority="high"</code> and <code>loading="eager"</code> by querySelector (each on a new line)</label>
+                    <textarea placeholder=".hero-carousel .hero-el:first-child img.hero" name="fph" id="fph"></textarea>
+                </fieldset>
+                <fieldset>
+                    <legend>Injections (each on a new line)</legend>
+                    <label for="th">Top of <code>&lt;html&gt;</code></label><br>
+                    <textarea placeholder="&lt;meta name='viewport' content='width=device-width,initial-scale=1,shrink-to-fit=no'&gt;" rows="3" name="th" id="th"></textarea>
+                    <label for="ht">Top of <code>&lt;head&gt;</code></label><br>
+                    <textarea rows="3" name="ht" id="ht" placeholder="&lt;style&gt;*{outline:1px solid red;}&lt;/style&gt;"></textarea>
+                    <label for="hb">Bottom of <code>&lt;head&gt;</code></label><br>
+                    <textarea placeholder="&lt;link rel='preload' href='/hero-image.jpg' as='image'&gt;" rows="3" name="hb" id="hb"></textarea>
+                    <label for="bt">Top of <code>&lt;body&gt;</code></label><br>
+                    <textarea rows="3" name="bt" id="bt" placeholder="&lt;link rel='stylesheet' href='https://slowfil.es/file?type=css&delay=2500'&gt;"></textarea>
+                    <label for="bb">Bottom of <code>&lt;body&gt;</code></label><br>
+                    <textarea rows="3" name="bb" id="bb" placeholder="&lt;script src='https://slowfil.es/file?type=js&delay=2500'&gt;"></textarea>
+                    <label for="h">Response Headers</label>
+                    <textarea rows="3" name="h" id="h" placeholder="x-foo: bar"></textarea>
+                </fieldset>
+                <fieldset>
+                    <legend>Request Blocking</legend>
+                    <label for="bu">Block URLs containing (space separated)</label><br>
+                    <input type="text" name="bu" placeolder="ads.js thirdparty.com">
+                    <label for="bh">Block Hosts containing (space separated)</label><br>
+                    <input type="text" name="bh" placeolder="google thirdparty.com">
+                </fieldset>
+                <fieldset style="margin-bottom: 250px;">
+                    <legend>Direct Testing</legend>
+                    <label for="targetURL">Test URL:</label><br>
+                    <input type="url" readonly="true" id="targetURL" name="targetURL" value="Form not complete..." onclick="this.focus();this.select()">
+                    <p><a href="" id="link" target="_blank">Visit page in a new tab</a> (note that you may see cross-origin errors accessing directly)</p>
+                </fieldset>
+            </form>
+        </div>
+        <div class="sticky-wrapper">
+            <fieldset class="sticky highlight">
+                <legend>WebPageTest Script</legend>
+                <textarea readonly rows="4" id="wpt-script" onclick="this.focus();this.select()"></textarea>
+                <p>Read more about <a href="https://nooshu.com/blog/2020/12/31/how-to-run-a-webpagetest-test/#script-tab">WebPageTest scripts here</a>.</p>
+            </fieldset>
+        </div>
+        <script>
+            const TRANSFORMS = [
+                {
+                    'short': 'rpf',
+                    'long': 'Remove Preload Fonts',
+                    'id': 0
+                }, {
+                    'short': 'rps',
+                    'long': 'Remove Preload Scripts',
+                    'id': 1
+                }, {
+                    'short': 'rpi',
+                    'long': 'Remove Preload Images',
+                    'id': 2
+                }, {
+                    'short': 'rpc',
+                    'long': 'Remove Preload Styles',
+                    'id': 3
+                }, {
+                    'short': 'ds',
+                    'long': 'Defer Scripts',
+                    'id': 4
+                }, {
+                    'short': 'ai',
+                    'long': 'Add <code>decoding="async"</code> to <code>&lt;img&gt;</code> elements',
+                    'id': 5
+                }, {
+                    'short': 'li',
+                    'long': 'Add <code>loading="lazy"</code> to <code>&lt;img&gt;</code> elements',
+                    'id': 6
+                }, {
+                    'short': 'si',
+                    'long': 'Swap <code>&lt;img data-src&gt;</code> for <code>&lt;img src&gt;</code>',
+                    'id': 7
+                }, {
+                    'short': 'dc',
+                    'long': 'Defer external CSS',
+                    'id': 8
+                }, {
+                    'short': 'ric',
+                    'long': 'Remove inline CSS',
+                    'id': 9
+                }, {
+                    'short': 'sc',
+                    'long': 'Un-async external CSS',
+                    'id': 10
+                }, {
+                    'short': 'oi',
+                    'long': 'Optimise Images (experimental)',
+                    'id': 11
+                }
+            ]
+            const ELEMENTS = ['th','ht','hb','bt','bb','h','fpl','fph'];
 
-  const toggles = document.getElementById('toggles');
+            const toggles = document.getElementById('toggles');
 
-  TRANSFORMS.forEach(t => {
-      let lab = document.createElement('label');
-      lab.for = t.short;
-      let ele = document.createElement('input');
-      ele.name = t.short;
-      ele.id = t.short;
-      ele.type = "checkbox";
-      lab.appendChild(ele);
-      lab.innerHTML += t.long;
-      toggles.appendChild(lab);
-  })
-  document.getElementById('form').addEventListener('change', () => {
-    const formEl = document.getElementById('form');
-    const targetURLEl = document.getElementById('targetURL');
-    const targetLinkEl = document.getElementById('link');
-    const wptScriptEl = document.getElementById('wpt-script');
-    if (formEl.checkValidity()) {
-      const formData = new FormData(formEl);
-      let url = new URL(formData.get('url'));
-      url = addQS(url,formData);
-      let bu = "";
-      let bh = "";
-      if (formData.get('bu')) {
-          bu = "\\nblock "+formData.get('bu');
-      }
-      if (formData.get('bh')) {
-          bh = "\\nblockDomains "+formData.get('bh');
-      }
-      newHost = url.host.replaceAll('.','_')+'.perfproxy.com';
-      wptScriptEl.value = "overrideHost "+url.host+" "+newHost+bu+bh+"\\nnavigate "+url.href;
-      url.host = newHost;
-      targetURLEl.value = url.href;
-      targetLinkEl.href = url.href;
-    } else {
-      targetURLEl.value = 'Form not complete...';
-    }
-  })
-  function addQS(url, formData) {
-        if (TRANSFORMS.some(t => formData.get(t.short))) {
-            let bits = "";
             TRANSFORMS.forEach(t => {
-                bits += (!!formData.get(t.short) ? '1' : '0');
+                let lab = document.createElement('label');
+                lab.for = t.short;
+                let ele = document.createElement('input');
+                ele.name = t.short;
+                ele.id = t.short;
+                ele.type = "checkbox";
+                lab.appendChild(ele);
+                lab.innerHTML += t.long;
+                toggles.appendChild(lab);
             })
-            let hex = parseInt(bits , 2).toString(16).toUpperCase();
-            url.searchParams.set("_pp",hex+"-"+bits.length);
-        }
-        if (formData.get('ht').length > 0) {
-            let ht = formData.get('ht').split('\\n');
-            ht.forEach(h => {
-                url.searchParams.append("_ht", encodeURIComponent(h))
-            })
-        }
-        if (formData.get('th').length > 0) {
-            let th = formData.get('th').split('\\n');
-            th.forEach(h => {
-                url.searchParams.append("_th", encodeURIComponent(h))
-            })
-        }
-        if (formData.get('hb').length > 0) {
-            let hb = formData.get('hb').split('\\n');
-            hb.forEach(h => {
-                url.searchParams.append("_hb", encodeURIComponent(h))
-            })
-        }
-        if (formData.get('bt').length > 0) {
-            let bt = formData.get('bt').split('\\n');
-            bt.forEach(h => {
-                url.searchParams.append("_bt", encodeURIComponent(h))
-            })
-        }
-        if (formData.get('bb').length > 0) {
-            let bb = formData.get('bb').split('\\n');
-            bb.forEach(h => {
-                url.searchParams.append("_bb", encodeURIComponent(h))
-            })
-        }
-        if (formData.get('h').length > 0) {
-            let h = formData.get('h').split('\\n');
-            h.forEach(hh => {
-                url.searchParams.append("_h", encodeURIComponent(hh))
-            })
-        }
-        if (formData.get('fpl').length > 0) {
-            let fpl = formData.get('fpl').split('\\n');
-            fpl.forEach(h => {
-                url.searchParams.append("_fpl", encodeURIComponent(h))
-            })
-        }
-        if (formData.get('fph').length > 0) {
-            let fph = formData.get('fph').split('\\n');
-            fph.forEach(h => {
-                url.searchParams.append("_fph", encodeURIComponent(h))
-            })
-        }
-      return url;
 
-  }
-</script></body></html>
+            const formEl = document.getElementById('form');
+            formEl.addEventListener('change', () => {
+                const targetURLEl = document.getElementById('targetURL');
+                const targetLinkEl = document.getElementById('link');
+                const wptScriptEl = document.getElementById('wpt-script');
+                if (formEl.checkValidity()) {
+                    const formData = new FormData(formEl);
+                    let url = new URL(formData.get('url'));
+                    url = addQS(url, formData);
+                    let bu = "";
+                    let bh = "";
+                    if (formData.get('bu')) {
+                        bu = "\\nblock " + formData.get('bu');
+                    }
+                    if (formData.get('bh')) {
+                        bh = "\\nblockDomains " + formData.get('bh');
+                    }
+                    newHost = url.host.replaceAll('.', '_') + '.perfproxy.com';
+                    wptScriptEl.value = "overrideHost " + url.host + " " + newHost + bu + bh + "\nnavigate " + url.href;
+                    url.host = newHost;
+                    targetURLEl.value = url.href;
+                    targetLinkEl.href = url.href;
+                } else {
+                    targetURLEl.value = 'Form not complete...';
+                }
+            })
+            function addQS(url, formData) {
+                if (TRANSFORMS.some(t => formData.get(t.short))) {
+                    let bits = "";
+                    TRANSFORMS.forEach(t => {
+                        bits += (!!formData.get(t.short) ? '1' : '0');
+                    })
+                    let hex = parseInt(bits, 2).toString(16).toUpperCase();
+                    url.searchParams.set("_pp", hex + "-" + bits.length);
+                }
+                ELEMENTS.forEach(el => {
+                    if (formData.get(el).length > 0) {
+                        let fds = formData.get(el).split('\\n');
+                        fds.forEach(fd => {
+                            url.searchParams.append(`_${el}`, encodeURIComponent(fd))
+                        })
+                    }
+                });
+                return url;
+            }
+        </script>
+    </body>
+</html>

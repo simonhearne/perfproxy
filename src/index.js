@@ -61,14 +61,14 @@ const TRANSFORMS = [
         'long': 'Optimise Images (experimental)',
         'id': 11
     }
-]
+];
 
 const ELEMENTS = [
     '_th','_ht','_hb','_bt','_bb','_oi','_h','_fpl','_fph'
-]
+];
 
 async function handleRequest(request) {
-    const url = new URL(request.url)
+    const url = new URL(request.url);
     if (url.host == "perfproxy.com") {
       return new Response(indexHtml,{headers:{'Content-Type': 'text/html'}});
     }
@@ -98,13 +98,13 @@ async function handleRequest(request) {
         newUrl.searchParams.delete('_pp');
         ELEMENTS.forEach(el => {
             newUrl.searchParams.delete(el);
-        })
-        let newRequest = new Request(newUrl.href,request)
+        });
+        let newRequest = new Request(newUrl.href,request);
         /* override host to prevent redirects */
         newRequest.headers.set('host',host);
 
         /* fetch from origin */
-        let res = await fetch(newUrl.toString(), newRequest)
+        let res = await fetch(newUrl.toString(), newRequest);
 
         /* follow redirects */
         let redirects = 0;
@@ -129,14 +129,14 @@ async function handleRequest(request) {
 
         /* set headers */
         if (transformations.hasOwnProperty('_h')) {
-            transformations['_h'].forEach(h => {
-                [name,val] = h.split(":")
-                response.headers.set(name.trim(),val.trim());
-            })
+            transformations._h.forEach(h => {
+                [key,val] = h.split(":");
+                response.headers.set(key.trim(),val.trim());
+            });
         }
         if (transformations.hasOwnProperty('oi')) {
             response.headers.set("accept-ch","DPR,Width");
-            response.headers.append("set-cookie","_oi=true")
+            response.headers.append("set-cookie","_oi=true");
         }
 
         /* remove CSP */
@@ -157,7 +157,7 @@ async function handleRequest(request) {
                     width: 640
                 }
             }
-        }
+        };
         if (/image\/avif/.test(accept)) {
             options.cf.image.format = 'avif';
         } else if (/image\/webp/.test(accept)) {
@@ -167,10 +167,10 @@ async function handleRequest(request) {
             options.cf.image.dpr = Math.min(2,Math.floor(parseFloat(request.headers.get('DPR'))));
         }
         if (request.headers.has('Width')) {
-            options.cf.image.width = Math.floor(parseFloat(request.headers.get('Width')))
+            options.cf.image.width = Math.floor(parseFloat(request.headers.get('Width')));
         }
-        console.log(`Image request for ${url.toString()}`)
-        console.log(options)
+        console.log(`Image request for ${url.toString()}`);
+        console.log(options);
 
         const imageRequest = new Request(url.toString(), request);
         let imgResponse = await fetch(imageRequest, options);
@@ -180,12 +180,12 @@ async function handleRequest(request) {
     } else {
         console.log("PASS-THRU");
         /* transparent pass-through for non-matched requests */
-        return fetch(url.toString(), request)
+        return fetch(url.toString(), request);
     }
 }
 
 function getTransformations(url) {
-    console.log(`Getting transformations for url: '${url}'`)
+    console.log(`Getting transformations for url: '${url}'`);
     let data = {};
     let a = url.searchParams.get('_pp');
     if (a) {
@@ -195,7 +195,7 @@ function getTransformations(url) {
         }
         try {
             for (let t in TRANSFORMS) {
-                data[TRANSFORMS[t].short] = (a[t] == '1')
+                data[TRANSFORMS[t].short] = (a[t] == '1');
             }
         } catch (e) {
             console.error(`Failed to decode string: ${a}`);
@@ -206,7 +206,7 @@ function getTransformations(url) {
         if (url.searchParams.has(el)) {
             data[el] = url.searchParams.getAll(el).map(e => decodeURIComponent(e));
         }
-    })
+    });
     console.log(data);
     return data;
 }
@@ -235,7 +235,7 @@ function rewrite(response,transformations,url) {
         element: el => {
             if (transformations.ds) {
                 el.setAttribute("defer","defer");
-                el.removeAttribute("async")
+                el.removeAttribute("async");
             }
         }
     })
@@ -261,14 +261,14 @@ function rewrite(response,transformations,url) {
                     let imgUrl = new URL(src);
                     console.log(`old image URL: ${src}`);
                     imgUrl.host = imgUrl.host.replaceAll(".","_")+".perfproxy.com";
-                    imgUrl.searchParams.set("_oi","true")
+                    imgUrl.searchParams.set("_oi","true");
                     console.log(`new image URL: ${imgUrl.href}`);
                     el.setAttribute('src',imgUrl.href);
                     if (el.hasAttribute('srcset')) {
-                        el.setAttribute('srcset',el.getAttribute('srcset').replace(/https?:\/\/([^\/]*)\//,imgUrl.origin+'/'))
+                        el.setAttribute('srcset',el.getAttribute('srcset').replace(/https?:\/\/([^\/]*)\//,imgUrl.origin+'/'));
                     }
                 } catch (e) {
-                    console.log(`Unable to rewrite image src: ${src}`)
+                    console.log(`Unable to rewrite image src: ${src}`);
                 }
                 if (el.hasAttribute('data-src')) {
                     src = el.getAttribute('data-src');
@@ -276,14 +276,14 @@ function rewrite(response,transformations,url) {
                         imgUrl = new URL(src);
                         console.log(`old image URL: ${src}`);
                         imgUrl.host = imgUrl.host.replaceAll(".","_")+".perfproxy.com";
-                        imgUrl.searchParams.set("_oi","true")
+                        imgUrl.searchParams.set("_oi","true");
                         console.log(`new image URL: ${imgUrl.href}`);
                         el.setAttribute('data-src',imgUrl.href);
                         if (el.hasAttribute('data-srcset')) {
-                            el.setAttribute('data-srcset',el.getAttribute('srcset').replace(/https?:\/\/([^\/]*)\//,imgUrl.origin+'/'))
+                            el.setAttribute('data-srcset',el.getAttribute('srcset').replace(/https?:\/\/([^\/]*)\//,imgUrl.origin+'/'));
                         }
                     } catch (e) {
-                        console.log(`Unable to rewrite image data-src: ${src}`)
+                        console.log(`Unable to rewrite image data-src: ${src}`);
                     }
                 }
             }
@@ -310,38 +310,38 @@ function rewrite(response,transformations,url) {
     .on('html', {
         element: el => {
             if (transformations.hasOwnProperty('_th')) {
-                transformations['_th'].forEach(element => {
-                    el.prepend(element,{html:true})
-                })
+                transformations._th.forEach(element => {
+                    el.prepend(element,{html:true});
+                });
             }
         }
     })
     .on('head', {
         element: el => {
             if (transformations.hasOwnProperty('_ht')) {
-                transformations['_ht'].forEach(element => {
-                    el.prepend(element,{html:true})
-                })
+                transformations._ht.forEach(element => {
+                    el.prepend(element,{html:true});
+                });
             }
             if (transformations.hasOwnProperty('_hb')) {
-                transformations['_hb'].forEach(element => {
-                    console.log(`Appending (bottom of head): ${element}`)
-                    el.append(element,{html:true})
-                })
+                transformations._hb.forEach(element => {
+                    console.log(`Appending (bottom of head): ${element}`);
+                    el.append(element,{html:true});
+                });
             }
         }
     })
     .on('body', {
         element: el => {
             if (transformations.hasOwnProperty('_bt')) {
-                transformations['_bt'].forEach(element => {
-                    el.prepend(element,{html:true})
-                })
+                transformations._bt.forEach(element => {
+                    el.prepend(element,{html:true});
+                });
             }
             if (transformations.hasOwnProperty('_bb')) {
-                transformations['_bb'].forEach(element => {
-                    el.append(element,{html:true})
-                })
+                transformations._bb.forEach(element => {
+                    el.append(element,{html:true});
+                });
             }
         }
     })
@@ -351,31 +351,31 @@ function rewrite(response,transformations,url) {
                 el.remove();
             }
         }
-    })
+    });
     if (transformations.hasOwnProperty('_fpl')) {
-        transformations['_fpl'].forEach(qs => {
+        transformations._fpl.forEach(qs => {
             hr.on(qs, {
                 element: el => {
                     el.setAttribute('fetchpriority','high');
                     el.setAttribute('loading','eager');
                 }
-            })
-        })
+            });
+        });
     }
     if (transformations.hasOwnProperty('_fph')) {
-        transformations['_fph'].forEach(qs => {
+        transformations._fph.forEach(qs => {
             hr.on(qs, {
                 element: el => {
                     el.setAttribute('fetchpriority','high');
                     el.setAttribute('loading','eager');
                 }
-            })
-        })
+            });
+        });
     }
-    return hr.transform(response)
+    return hr.transform(response);
 }
 
 addEventListener('fetch', event => {
   console.log(event.request.url);
-  event.respondWith(handleRequest(event.request))
+  event.respondWith(handleRequest(event.request));
 });
