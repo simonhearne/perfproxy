@@ -1,0 +1,12 @@
+{
+  "name": "perfproxy",
+  "version": "1.0.0",
+  "devDependencies": {
+    "wrangler": "0.0.0-119bf5e"
+  },
+  "private": true,
+  "scripts": {
+    "start": "wrangler dev",
+    "deploy": "wrangler publish"
+  }
+}

@@ -1,0 +1,8 @@
+name = "perfproxy"
+main = "src/index.js"
+compatibility_date = "2022-06-25"
+workers_dev = false
+
+account_id = "88729be0c36b22faf8073deca088968c"
+zone_id = "ac417cc69670d1d98db797d69e6ca7d5"
+routes = ["perfproxy.com/*","*.perfproxy.com/*"]
