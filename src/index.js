@@ -60,6 +60,10 @@ const TRANSFORMS = [
         'short': 'oi',
         'long': 'Optimise Images (experimental)',
         'id': 11
+    }, {
+        'short': 'rgf',
+        'long': 'Remove Google Fonts CSS',
+        'id': 12
     }
 ];
 
@@ -308,6 +312,9 @@ function rewrite(response,transformations,url) {
             if (transformations.dc) {
                 el.setAttribute("media","none");
                 el.setAttribute("onload","this.media='all'");
+            }
+            if (transformations.rgf && el.hasAttribute('href') && el.getAttribute('href').includes('fonts.googleapis.com')) {
+                el.remove();
             }
         }
     })
