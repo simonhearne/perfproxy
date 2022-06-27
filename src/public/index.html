@@ -117,7 +117,7 @@
                 <fieldset style="margin-bottom: 250px;">
                     <legend>Direct Testing</legend>
                     <label for="targetURL">Test URL:</label><br>
-                    <input type="url" readonly="true" id="targetURL" name="targetURL" value="Form not complete..." onclick="this.focus();this.select()">
+                    <input type="url" readonly="true" id="targetURL" name="targetURL" placeholder="Enter a Target URL!" onclick="this.focus();this.select()">
                     <p><a href="" id="link" target="_blank">Visit page in a new tab</a> (note that you may see cross-origin errors accessing directly)</p>
                 </fieldset>
             </form>
@@ -125,7 +125,7 @@
         <div class="sticky-wrapper">
             <fieldset class="sticky highlight">
                 <legend>WebPageTest Script</legend>
-                <textarea readonly rows="4" id="wpt-script" onclick="this.focus();this.select()"></textarea>
+                <textarea readonly rows="4" id="wpt-script" placeholder="Enter a Target URL!" onclick="this.focus();this.select()"></textarea>
                 <p><a href="https://www.webpagetest.org/#script" target="_blank">Open WebPageTest</a>. Read more about <a href="https://nooshu.com/blog/2020/12/31/how-to-run-a-webpagetest-test/#script-tab">WebPageTest scripts here</a>.</p>
             </fieldset>
         </div>
