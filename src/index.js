@@ -139,8 +139,8 @@ async function handleRequest(request) {
         /* set headers */
         if (transformations.hasOwnProperty('_h')) {
             transformations._h.forEach(h => {
-                [key,val] = h.split(":");
-                response.headers.set(key.trim(),val.trim());
+                [key, val, ignore] = h.split(/:(.*)/s);
+                response.headers.append(key.trim(), val.trim());
             });
         }
 
