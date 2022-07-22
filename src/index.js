@@ -377,8 +377,8 @@ function rewrite(response,transformations,url) {
         transformations._fpl.forEach(qs => {
             hr.on(qs, {
                 element: el => {
-                    el.setAttribute('fetchpriority','high');
-                    el.setAttribute('loading','eager');
+                    el.setAttribute('fetchpriority','low');
+                    el.setAttribute('loading','lazy');
                 }
             });
         });
