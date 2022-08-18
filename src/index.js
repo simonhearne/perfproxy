@@ -265,7 +265,7 @@ function rewrite(response,transformations,url) {
             if (transformations.li) {
                 el.setAttribute("loading","lazy");
             }
-            if (transformations.si && el.hasAttribute('data-src') && !el.hasAttribute('src')) {
+            if (transformations.si && el.hasAttribute('data-src')) {
                 el.setAttribute("src",el.getAttribute("data-src"));
                 el.removeAttribute("data-src");
                 if (el.hasAttribute('data-srcset')) {
