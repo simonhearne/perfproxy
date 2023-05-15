@@ -222,7 +222,7 @@ function getTransformations(url) {
     }
     ELEMENTS.forEach(el => {
         if (url.searchParams.has(el)) {
-            data[el] = url.searchParams.getAll(el).map(e => decodeURIComponent(e));
+            data[el] = url.searchParams.getAll(el).map(e => decodeURIComponent(e)).filter(e => e.length > 0);
         }
     });
     console.log(data);
